@@ -3,4 +3,4 @@ Allow: /
 
 Disallow: /404.html
 
-Sitemap: https://downsouthlandsolutions.com/sitemap.xml
+Sitemap: https://dsland.solutions/sitemap.xml
