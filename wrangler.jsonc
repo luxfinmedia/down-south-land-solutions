@@ -1,0 +1,15 @@
+{
+  // Down South Land Solutions — static site, no Worker script.
+  //
+  // Pages are stored flat (forestry-mulching.html) but SERVED at the
+  // directory URLs the site has always used (/forestry-mulching/).
+  // "force-trailing-slash" is what does that, and it 301s the
+  // no-slash form to the slash form so there is one canonical URL.
+  "name": "down-south-land-solutions",
+  "compatibility_date": "2026-09-16",
+  "assets": {
+    "directory": "./",
+    "html_handling": "force-trailing-slash",
+    "not_found_handling": "404-page"
+  }
+}
