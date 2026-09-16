@@ -65,11 +65,12 @@
   /* ---------------- reveal on scroll ----------------
      Markup is untouched: the hidden state is added here, so a page with no
      JS (or with reduced motion asked for) renders complete and static. */
+  /* Text blocks fade up. Anything picture-led is deliberately left alone —
+     photos just appear, no slide, no wipe. */
   var REVEAL = [
     ['.sec-head',1],['.eyebrow',1],['.blk',1],['.lede',1],
-    ['.svc',1],['.fact',1],['.feature',1],['.feature-photo',1],['.feature-body',1],
-    ['.linkcards a',1],['.gal figure',1],['.trio > *',1],['.eq-row',1],
-    ['.faq details',1],['.cty',1],['.areacol',1],['.ctychips',1],['.townchips',1],
+    ['.fact',1],['.feature-body',1],
+    ['.faq details',1],['.areacol',1],['.ctychips',1],['.townchips',1],
     ['.speclist li',1],['.tablewrap',1],['.q-side',1],['.quote',1],['.ctaband-in',1]
   ];
   function reveals(){
@@ -156,21 +157,7 @@
     window.addEventListener('resize',frame); frame();
   }
 
-  /* ---------------- photo wipes ---------------- */
-  function wipes(){
-    if(reduced||!('IntersectionObserver' in window)) return;
-    var els=[].slice.call(document.querySelectorAll('.svc-img,.feature-photo,.gal figure,.eq-photo'))
-      .filter(function(el){ return !el.closest('.hero'); });
-    if(!els.length) return;
-    els.forEach(function(el,i){ el.classList.add('imgwipe'); el.style.setProperty('--d',((i%3)*50)+'ms'); });
-    var io=new IntersectionObserver(function(en){
-      en.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
-    },{rootMargin:'0px 0px -5% 0px',threshold:0.08});
-    els.forEach(function(el){ io.observe(el); });
-    setTimeout(function(){ els.forEach(function(el){ el.classList.add('in'); }); },2500);
-  }
-
-  dropdowns(); headerState(); reveals(); parallax(); counters(); progress(); wipes();
+  dropdowns(); headerState(); reveals(); parallax(); counters(); progress();
 
   var ck=document.getElementById('cookie');
   function pref(v){try{localStorage.setItem('dsls_cookie',v);}catch(e){} if(ck) ck.hidden=true;}
