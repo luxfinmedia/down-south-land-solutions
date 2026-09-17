@@ -100,6 +100,11 @@
         </div>
         <form id="quoteForm" novalidate data-context="contact">
   <input type="hidden" name="page_context" value="contact">
+  <input type="hidden" name="ts" id="q-ts" value="">
+  <input type="hidden" name="page" id="q-page" value="">
+  <div class="f-hp" aria-hidden="true">
+    <label for="q-company">Company</label>
+    <input id="q-company" name="company" type="text" tabindex="-1" autocomplete="off"></div>
   <div><label for="q-name">Name</label><input id="q-name" name="full_name" type="text" autocomplete="name" required></div>
   <div><label for="q-phone">Phone</label><input id="q-phone" name="phone" type="tel" autocomplete="tel" required></div>
   <div class="f-full"><label for="q-email">Email</label><input id="q-email" name="email" type="email" autocomplete="email"></div>

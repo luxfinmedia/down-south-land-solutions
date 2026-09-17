@@ -1,15 +1,24 @@
 {
-  // Down South Land Solutions — static site, no Worker script.
+  // Down South Land Solutions — static site plus one Worker route.
   //
   // Pages are stored flat (forestry-mulching.html) but SERVED at the
   // directory URLs the site has always used (/forestry-mulching/).
   // "force-trailing-slash" is what does that, and it 301s the
   // no-slash form to the slash form so there is one canonical URL.
+  //
+  // worker.js handles POST /api/lead and forwards the estimate form to
+  // GoHighLevel. Everything else is served straight from the assets.
+  // Credentials are Cloudflare secrets/vars, never in this repo:
+  //   GHL_TOKEN (secret), GHL_LOCATION_ID, and optionally
+  //   GHL_PIPELINE_ID / GHL_STAGE_ID / GHL_SETUP_KEY.
   "name": "down-south-land-solutions",
+  "main": "worker.js",
   "compatibility_date": "2026-09-16",
   "assets": {
     "directory": "./",
+    "binding": "ASSETS",
     "html_handling": "force-trailing-slash",
-    "not_found_handling": "404-page"
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*"]
   }
 }
