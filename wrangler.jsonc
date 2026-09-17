@@ -11,6 +11,16 @@
   // Credentials are Cloudflare secrets/vars, never in this repo:
   //   GHL_TOKEN (secret), GHL_LOCATION_ID, and optionally
   //   GHL_PIPELINE_ID / GHL_STAGE_ID / GHL_SETUP_KEY.
+  // Plain-text vars MUST live here: `wrangler deploy` replaces the worker's
+  // var bindings with whatever this file declares, so anything set only in
+  // the dashboard is wiped on the next deploy. Secrets survive deploys and
+  // stay in the dashboard (GHL_TOKEN). Neither value below is a credential;
+  // GHL_SETUP_KEY only unlocks a read-only pipeline listing and comes out
+  // once setup is verified.
+  "vars": {
+    "GHL_LOCATION_ID": "PCqXx8U8Nkznc2v7LsFk",
+    "GHL_SETUP_KEY": "05671io1g2ugjcosuc44"
+  },
   "name": "down-south-land-solutions",
   "main": "worker.js",
   "compatibility_date": "2026-09-16",
