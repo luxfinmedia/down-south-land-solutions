@@ -274,15 +274,33 @@ async function handleCheck(request, env) {
   if (!token || !locationId) {
     return json({ ok: false, token: !!token, locationId: !!locationId, hint: "Set GHL_TOKEN and GHL_LOCATION_ID" });
   }
-  const res = await ghlFetch(token, `/opportunities/pipelines?locationId=${encodeURIComponent(locationId)}`, { method: "GET" });
+  /* Probe each endpoint the lead flow uses and report exactly what GHL says,
+     so a scope or header problem names itself instead of being guessed at. */
+  const probe = async (label, path, version) => {
+    const r = await fetch(GHL + path, {
+      headers: { Authorization: `Bearer ${token}`, Version: version, Accept: "application/json" },
+    });
+    const b = await readBody(r);
+    return { label, version, status: r.status, message: b?.message || b?.error || (r.ok ? "ok" : JSON.stringify(b).slice(0, 160)) };
+  };
+  const loc = encodeURIComponent(locationId);
+  const probes = [
+    await probe("pipelines", `/opportunities/pipelines?locationId=${loc}`, "2021-07-28"),
+    await probe("pipelines v3", `/opportunities/pipelines?locationId=${loc}`, "v3"),
+    await probe("contacts", `/contacts/?locationId=${loc}&limit=1`, "2021-07-28"),
+    await probe("location", `/locations/${loc}`, "2021-07-28"),
+  ];
+
+  const res = await ghlFetch(token, `/opportunities/pipelines?locationId=${loc}`, { method: "GET" });
   const body = await readBody(res);
-  if (!res.ok) return json({ ok: false, status: res.status, body });
+  if (!res.ok) return json({ ok: false, status: res.status, body, tokenPrefix: String(token).slice(0, 8),
+                             tokenLength: String(token).length, locationId, probes });
   const pipelines = (body.pipelines || []).map(p => ({
     id: p.id, name: p.name,
     stages: (p.stages || []).map(s => ({ id: s.id, name: s.name })),
   }));
   const chosen = await resolveStage(token, locationId, env);
-  return json({ ok: true, pipelines, willUse: chosen });
+  return json({ ok: true, pipelines, willUse: chosen, probes });
 }
 
 export default {
