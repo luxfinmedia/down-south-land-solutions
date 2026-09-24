@@ -100,11 +100,11 @@
         </div>
         <form id="quoteForm" novalidate data-context="contact">
   <input type="hidden" name="page_context" value="contact">
-  <input type="hidden" name="ts" id="q-ts" value="">
+  <input type="hidden" name="dt" id="q-dt" value="">
   <input type="hidden" name="page" id="q-page" value="">
   <div class="f-hp" aria-hidden="true">
-    <label for="q-company">Company</label>
-    <input id="q-company" name="company" type="text" tabindex="-1" autocomplete="off"></div>
+    <label for="q-ref2">Leave this blank</label>
+    <input id="q-ref2" name="lf_ref2" type="text" tabindex="-1" autocomplete="off"></div>
   <div><label for="q-name">Name</label><input id="q-name" name="full_name" type="text" autocomplete="name" required></div>
   <div><label for="q-phone">Phone</label><input id="q-phone" name="phone" type="tel" autocomplete="tel" required></div>
   <div class="f-full"><label for="q-email">Email</label><input id="q-email" name="email" type="email" autocomplete="email"></div>
@@ -120,6 +120,7 @@
   <p class="f-note">We'll get back to you with a number. Nothing here gets shared and you won't get put on a list.</p>
   <div class="sent" role="status" aria-live="polite"><b>Got it.</b>
     <p>We'll be in touch with a number. If you need it sooner, call or text (205) 535-6376.</p></div>
+  <p class="f-err" role="alert" hidden style="grid-column:1/-1;margin:0;color:#b3261e"><b>That didn't go through.</b> Call or text <a href="tel:+12055356376">(205) 535-6376</a> and we'll get you sorted.</p>
 </form>
       </div></div></section>
 </main>
@@ -157,6 +158,6 @@
     <button type="button" id="ckNo" class="ck-b">Essential only</button>
   </div>
 </div>
-<script src="/js/site.js?v=c15ef961" defer></script>
+<script src="/js/site.js?v=6c30fade" defer></script>
 </body>
 </html>

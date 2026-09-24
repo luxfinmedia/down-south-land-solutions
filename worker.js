@@ -205,12 +205,33 @@ async function handleLead(request, env, ctx) {
     return json({ ok: false, error: "bad_json" }, 400);
   }
 
-  /* Bots fill hidden fields and submit instantly. Both look like success to
-     them so they don't retune and come back. */
-  const elapsed = Number(data.ts) ? Date.now() - Number(data.ts) : 99999;
-  if (clean(data.company) || elapsed < 2500) {
-    return json({ ok: true, filtered: true });
-  }
+  /* BOT CHECKS — DIVERT, NEVER DISCARD (rewritten 24 Sep 2026).
+   *
+   * The first version threw leads away on two signals and told the visitor it
+   * had worked. Both signals were the same two that silently binned real
+   * enquiries on OPS, JB and On Grade in early September:
+   *
+   *   1. A honeypot called "company". Chrome's address autofill fills a field
+   *      with that name for anyone who lets the browser complete the form,
+   *      autocomplete="off" notwithstanding. Real people, dropped.
+   *   2. "ts" was the time the page loaded, stamped by the visitor's clock and
+   *      subtracted from Cloudflare's. A phone whose clock runs a few seconds
+   *      fast produced a tiny or negative elapsed time and was binned as a bot.
+   *
+   * With no KV store and logging switched off, a dropped lead left no trace
+   * anywhere. Down South went two weeks with no enquiries and no way to tell
+   * whether nobody had asked or the form had eaten them.
+   *
+   * Now: the client measures its own elapsed milliseconds and sends "dt", so no
+   * clock difference can distort it. The honeypot is renamed to something no
+   * autofill heuristic touches, and even when it IS filled the lead is still
+   * delivered, only flagged. Only an impossibly fast fill (a person cannot type
+   * a name, a phone number and pick two dropdowns in 2.5 seconds) is diverted —
+   * and diverted means kept in KV and logged, not deleted. The old "company" and
+   * "ts" fields are ignored if a cached page still sends them. */
+  const dt = Number(data.dt);
+  const flagged = clean(data.lf_ref2, 200) ? "honeypot" : null;
+  const tooFast = Number.isFinite(dt) && dt > 0 && dt < 2500 ? "too_fast" : null;
 
   const lead = {
     full_name: clean(data.full_name, 120),
@@ -224,11 +245,35 @@ async function handleLead(request, env, ctx) {
   };
   if (!lead.full_name || !lead.phone) return json({ ok: false, error: "missing_fields" }, 422);
 
+  lead.submitted_at = new Date().toISOString();
+  lead.fill_ms = Number.isFinite(dt) ? dt : null;
+  lead.suspect = tooFast || flagged;
+
+  /* Our own copy FIRST, no expiry. Whatever GoHighLevel does next, the lead is
+     somewhere we can read it. */
+  const key = `lead:${lead.submitted_at}:${Math.random().toString(36).slice(2, 8)}`;
+  let stored = false;
+  if (env.LEADS) {
+    try { await env.LEADS.put(key, JSON.stringify(lead)); stored = true; }
+    catch (e) { console.error("lead_store_failed", key, String(e)); }
+  } else {
+    console.error("LEADS binding missing — lead not stored", JSON.stringify(lead));
+  }
+  const record = (patch) => stored && ctx && ctx.waitUntil(
+    env.LEADS.put(key, JSON.stringify({ ...lead, ...patch })).catch(() => {}));
+
+  if (flagged) console.error("lead_flagged_but_delivered", flagged, key, JSON.stringify(lead));
+  if (tooFast) {
+    console.error("lead_diverted", tooFast, key, JSON.stringify(lead));
+    return json({ ok: true, id: key });
+  }
+
   const token = env.GHL_TOKEN;
   const locationId = env.GHL_LOCATION_ID;
   if (!token || !locationId) {
     console.error("GHL not configured — lead not forwarded:", JSON.stringify(lead));
-    return json({ ok: true, forwarded: false, reason: "not_configured" });
+    record({ delivered: false, reason: "not_configured" });
+    return json({ ok: stored, forwarded: false, reason: "not_configured" }, stored ? 200 : 502);
   }
 
   const result = { contact: false, opportunity: false, note: false };
@@ -237,7 +282,8 @@ async function handleLead(request, env, ctx) {
     result.contact = contact.ok;
     if (!contact.ok) {
       console.error("GHL contact failed", contact.status, JSON.stringify(contact.body), JSON.stringify(lead));
-      return json({ ok: true, forwarded: false, result });
+      record({ delivered: false, ghl_status: contact.status });
+      return json({ ok: stored, forwarded: false, result }, stored ? 200 : 502);
     }
 
     /* The note is the part Joe reads, so write it before the opportunity —
@@ -256,10 +302,12 @@ async function handleLead(request, env, ctx) {
     }
 
     if (!result.opportunity || !result.note) console.error("Lead payload for recovery:", JSON.stringify(lead));
+    record({ delivered: true, ...result });
     return json({ ok: true, forwarded: result.contact, result });
   } catch (err) {
     console.error("GHL threw", String(err), JSON.stringify(lead));
-    return json({ ok: true, forwarded: false, error: "upstream" });
+    record({ delivered: false, error: "upstream" });
+    return json({ ok: stored, forwarded: false, error: "upstream" }, stored ? 200 : 502);
   }
 }
 

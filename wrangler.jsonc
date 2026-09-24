@@ -24,6 +24,19 @@
   "name": "down-south-land-solutions",
   "main": "worker.js",
   "compatibility_date": "2026-09-16",
+  // Our own copy of every lead, written BEFORE GoHighLevel is called
+  // (added 24 Sep 2026). Declared here, not only in the dashboard, because a
+  // Git deploy re-applies this file and drops anything configured only there
+  // — On Grade's namespace once showed zero writes for exactly that reason.
+  // The namespace id is not a secret.
+  "kv_namespaces": [
+    { "binding": "LEADS", "id": "edd1adf72d4340d081e9a1d3fd34bd80" }
+  ],
+  // Logs on. Without them a diverted or rejected lead leaves no trace and the
+  // only symptom is a client who says nothing is coming in.
+  "observability": {
+    "logs": { "enabled": true, "head_sampling_rate": 1, "invocation_logs": true, "persist": true }
+  },
   "assets": {
     "directory": "./",
     "binding": "ASSETS",
